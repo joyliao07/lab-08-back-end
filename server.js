@@ -4,9 +4,15 @@ const express = require('express');
 const superagent = require('superagent');
 const cors = require('cors');
 const app = express();
+const pg = require('pg');
+
+require('dotenv').config();
+const client = new pg.Client(process.env.DATABASE_URL);
+client.connect();
+
+client.on('error', err => console.error(err));
 
 app.use(cors());
-require('dotenv').config();
 const PORT = process.env.PORT || 3000;
 
 //API routes
@@ -87,6 +93,8 @@ function Movie(selection){
   this.image_url = `https://image.tmdb.org/t/p/w500${selection.poster_path}`;
   this.overview = selection.overview;
 }
+
+
 
 
 
