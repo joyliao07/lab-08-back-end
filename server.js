@@ -70,7 +70,7 @@ function Business(result){
 
 
 function getMovies(request, response){
-  const url = `https://api.themoviedb.org/3/search/movie/?api_key=${process.env.MOVIE_API_KEY}&language=en-US&page=1&query=${request.query.data.search_query}`;
+  const url = `https://api.themoviedb.org/3/search/movie/?api_key=${process.env.MOVIE_API_KEY}&query=${request.query.data.search_query}`;
   superagent
     .get(url)
     .then(result => {
@@ -84,7 +84,7 @@ function Movie(selection){
   this.vote_total = selection.vote_count;
   this.vote_average = selection.vote_average;
   this.popularity = selection.popularity;
-  this.image_url = selection.poster_path;
+  this.image_url = `https://image.tmdb.org/t/p/w500${selection.poster_path}`;
   this.overview = selection.overview;
 }
 
