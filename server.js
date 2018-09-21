@@ -4,7 +4,7 @@ const express = require('express');
 const superagent = require('superagent');
 const cors = require('cors');
 const app = express();
-const pg = require('pg');
+// const pg = require('pg');
 
 require('dotenv').config();
 const client = new pg.Client(process.env.DATABASE_URL);
@@ -32,8 +32,6 @@ function searchToLatLong(query){
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_API_KEY}`;
   return superagent.get(url)
     .then(result => {
-      lon = result.body.results[0].geometry.location.lng;
-      lat = result.body.results[0].geometry.location.lat;
       return{
         search_query: query,
         formatted_query: result.body.results[0].formatted_address,
@@ -43,9 +41,6 @@ function searchToLatLong(query){
 
     });
 }
-
-let lon;
-let lat;
 
 
 function getWeather(request, response){
@@ -87,7 +82,9 @@ function getMovies(request, response){
   superagent
     .get(url)
     .then(result => {
-      let movieSummaries = result.body.results.map(selection => {return new Movie(selection);});
+      let movieSummaries = result.body.results.map(selection => {
+        return new Movie(selection);
+      });
       response.send(movieSummaries);
     });
 }
@@ -102,14 +99,11 @@ function Movie(selection){
 }
 
 function getMeetup(request, response) {
+  const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}lat=${request.query.data.latitude}&key=${MEETUP_API_KEY}`;
+  superagent.get(url);
   console.log('this is the request', request);
-  const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${lon}lat=${lat}&key=${meetup_api_key}`;
   console.log('this is the url', url);
   console.log('this is the response', response);
-  // superagent.get(url)
-  // .then(result => {
-  //   let meetupSummary = result.body.results.map(selection => new Meetup(selection));
-  // });
 }
 
 
@@ -117,7 +111,7 @@ function getMeetup(request, response) {
 //   this.link = result. ,
 //   this.name = result. ,
 //   this.creation_date = result. ,
-//   this.host = result. 
+//   this.host = result.
 // }
 
 
