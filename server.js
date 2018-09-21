@@ -32,6 +32,8 @@ function searchToLatLong(query){
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_API_KEY}`;
   return superagent.get(url)
     .then(result => {
+      lon = result.body.results[0].geometry.location.lng;
+      lat = result.body.results[0].geometry.location.lat;
       return{
         search_query: query,
         formatted_query: result.body.results[0].formatted_address,
@@ -41,6 +43,9 @@ function searchToLatLong(query){
 
     });
 }
+
+let lon;
+let lat;
 
 
 function getWeather(request, response){
@@ -98,8 +103,8 @@ function Movie(selection){
 
 function getMeetup(request, response) {
   console.log('this is the request', request);
-  
-  const url = `https://api.meetup.com/find/upcoming_events?&sign=true&photo-host=public&page=20&key=${METTUP_API_KEY}`;
+  const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${lon}lat=${lat}&key=${meetup_api_key}`;
+  console.log('this is the url', url);
   console.log('this is the response', response);
   // superagent.get(url)
   // .then(result => {
