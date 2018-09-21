@@ -24,6 +24,8 @@ app.get('/location', (request, response) => {
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
+app.get('/meetups', getMeetup);
+// app.get('/trails', getHiking);
 
 
 function searchToLatLong(query){
@@ -94,25 +96,27 @@ function Movie(selection){
   this.overview = selection.overview;
 }
 
+function getMeetup(request, response) {
+  console.log('this is the request', request);
+  
+  const url = `https://api.meetup.com/find/upcoming_events?&sign=true&photo-host=public&page=20&key=${METTUP_API_KEY}`;
+  console.log('this is the response', response);
+  // superagent.get(url)
+  // .then(result => {
+  //   let meetupSummary = result.body.results.map(selection => new Meetup(selection));
+  // });
+}
 
 
+// function Meetup(result) {
+//   this.link = result. ,
+//   this.name = result. ,
+//   this.creation_date = result. ,
+//   this.host = result. 
+// }
 
 
-app.listen(PORT, () => console.log(`Listening on ${PORT}`));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+app.listen(PORT, () => console.log(`Listening on ${PORT}`));'use strict';
 
 
 
