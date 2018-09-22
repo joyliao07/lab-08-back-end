@@ -39,10 +39,9 @@ function searchToLatLong(query){
         latitude: result.body.results[0].geometry.location.lat,
         longitude: result.body.results[0].geometry.location.lng
       };
-
-    });
+    })
+    .catch(error => handleError(error));
 }
-
 
 
 function getWeather(request, response){
@@ -52,7 +51,8 @@ function getWeather(request, response){
     .then(result =>{
       let weatherSummaries = result.body.daily.data.map(day => {return new Weather(day);});
       response.send(weatherSummaries);
-    });
+    })
+    .catch(error => handleError(error, response));
 }
 
 function Weather(day){
@@ -69,7 +69,8 @@ function getYelp(request, response){
     .then(result =>{
       let yelpSummaries = result.body.businesses.map(restaurant => {return new Business(restaurant);});
       response.send(yelpSummaries);
-    });
+    })
+    .catch(error => handleError(error, response));
 }
 
 function Business(result){
@@ -88,7 +89,8 @@ function getMovies(request, response){
     .then(result => {
       let movieSummaries = result.body.results.map(selection => {return new Movie(selection);});
       response.send(movieSummaries);
-    });
+    })
+    .catch(error => handleError(error, response));
 }
 
 
@@ -108,7 +110,8 @@ function getMeetup(request, response) {
     .then(result => {
       let meetupSummaries = result.body.events.map(selection => {return new Meetup(selection);});
       response.send(meetupSummaries);
-    });
+    })
+    .catch(error => handleError(error, response));
 }
 
 function Meetup(result) {
@@ -126,7 +129,8 @@ function getTrails(request, response) {
     .then(result => {
       let trailsSummaries = result.body.trails.map(selection => {return new Trails(selection);});
       response.send(trailsSummaries);
-    });
+    })
+    .catch(error => handleError(error, response));
 }
 
 function Trails(result) {
