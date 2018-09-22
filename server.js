@@ -150,7 +150,46 @@ function handleError(err, res) {
   if (res) res.status(500).send('Sorry, something went wrong');
 }
 
+function deleteByLocationId(table, city) {
+  const SQL = `DELETE from ${table} WHERE location_id=${city};`;
+  return client.query(SQL);
+}
 
+function Location(query, res) {
+  this.search_query = query;
+  this.formatted_query = res.body.result[0].formatted_address;
+  this.latitude = res.body.results[0].geometry.location.lat;
+  this.longitude = res.body.results[0].geometry.location.lng;
+  this.created_at = Date.now();
+}
+
+Location.lookupLocation = (location) => {
+  const SQL = `SELECT * FROM locations WHERE search_query=$1;`;
+  const values = [location.query];
+
+  return client.query(SQL, values)
+    .then(result => {
+      if(result.rowCount > 0) {
+        location.cacheHit(result.rows[0]);
+      } else {
+        location.cacheMiss();
+      }
+    })
+    .catch(console.error);
+}
+
+Location.prototype = {
+  save: function() {
+    const SQL = `INSERT INTO locations (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id;`;
+    const values = [this.search_query, this.formatted_query, this.latitude, this.longitude];
+
+    return client.query(SQL, values)
+      .then(result => {
+        this.id = result.rows[0].id;
+        return this;
+      });
+  }
+};
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
