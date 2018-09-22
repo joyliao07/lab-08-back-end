@@ -27,27 +27,28 @@ app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
 app.get('/meetups', getMeetup);
-// app.get('/trails', getTrails);
+app.get('/trails', getTrails);
 
 Location.lookup = lookup;
 Weather.lookup = lookup;
 Business.lookup = lookup;
 Movie.lookup = lookup;
 Meetup.lookup = lookup;
-// Trails.lookup = lookup;
+Trails.lookup = lookup;
 
 Location.deleteByLocationId = deleteByLocationId;
 Weather.deleteByLocationId = deleteByLocationId;
 Business.deleteByLocationId = deleteByLocationId;
 Movie.deleteByLocationId = deleteByLocationId;
 Meetup.deleteByLocationId = deleteByLocationId;
-// Trails.deleteByLocationId = deleteByLocationId;
+Trails.deleteByLocationId = deleteByLocationId;
 
 Location.tableName = 'locations';
 Weather.tableName = 'weathers';
 Business.tableName = 'yelps';
 Movie.tableName = 'movies';
 Meetup.tableName = 'meetups';
+Trails.tableName = 'trails';
 
 // function searchToLatLong(query){
 //   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_API_KEY}`;
@@ -138,7 +139,7 @@ function Weather (day) {
 
 Weather.prototype = {
   save: function(location_id){
-    const SQL = `INSERT INTO ${this.tableName} (forecast, time, location_id) VALUES ($1, $2, $3, $4);`;
+    const SQL = `INSERT INTO ${this.tableName} (forecast, time, created_at, location_id) VALUES ($1, $2, $3, $4);`;
     const values = [this.forecast, this.time, this.created_at, location_id];
     client.query(SQL, values);
   }
@@ -205,8 +206,8 @@ function Business (food) {
 
 Business.prototype = {
   save: function(location_id){
-    const SQL = `INSERT INTO ${this.tableName} (name, image_url, price, rating, url, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
-    const values = [this.name, this.image_url, this.price, this.rating, this.url, location_id];
+    const SQL = `INSERT INTO ${this.tableName} (name, image_url, price, rating, url, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7);`;
+    const values = [this.name, this.image_url, this.price, this.rating, this.url, this.created_at, location_id];
     client.query(SQL, values);
   }
 };
@@ -270,12 +271,13 @@ function Movie (see) {
   this.image_url = `https://image.tmdb.org/t/p/w500${see.poster_path}`;
   this.popularity = see.popularity;
   this.released_on = see.release_date;
+  this.created_at = Date.now();
 }
 
 Movie.prototype = {
   save: function(location_id) {
-    const SQL = `INSERT INTO ${this.tableName} (title, overview, average_votes, total_votes, image_url, popularity, released_on, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
-    const values = [this.title, this.overview, this.average_votes, this.total_votes, this.image_url, this.popularity, this.released_on, location_id];
+    const SQL = `INSERT INTO ${this.tableName} (title, overview, average_votes, total_votes, image_url, popularity, released_on, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`;
+    const values = [this.title, this.overview, this.average_votes, this.total_votes, this.image_url, this.popularity, this.released_on, this.created_at, location_id];
     client.query(SQL, values);
   }
 };
@@ -343,18 +345,59 @@ Meetup.prototype = {
   }
 };
 
-function getTrails(request, response) {
-  const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
+// function getTrails(request, response) {
+//   const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
 
-  superagent.get(url)
-    .then(result => {
-      let trailsSummaries = result.body.trails.map(selection => {return new Trails(selection);});
-      response.send(trailsSummaries);
-    })
-    .catch(error => handleError(error, response));
+//   superagent.get(url)
+//     .then(result => {
+//       let trailsSummaries = result.body.trails.map(selection => {return new Trails(selection);});
+//       response.send(trailsSummaries);
+//     })
+//     .catch(error => handleError(error, response));
+// }
+
+// function Trails(result) {
+//   this.name = result.name;
+//   this.location = result.location;
+//   this.stars = result.stars;
+//   this.star_votes = result.starVotes;
+//   this.summary = result.summary;
+//   this.trail_url = result.url;
+//   this.conditions = result.conditionStatus;
+//   this.condition_date = result.conditionDate.substring(0, 10);
+//   this.condition_time = result.conditionDate.substring(11, 20);
+// }
+
+function getTrails (request, response) {
+  Trails.lookup({
+    tableName: Trails.tableName,
+    cacheMiss: function () {
+      const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
+
+      superagent.get(url)
+        .then(result => {
+          let trailSummaries = result.body.trails.map( trails => {
+            let summary = new Trails(trails);
+            summary.save(request.query.data.id);
+            return summary;
+          });
+          response.send(trailSummaries);
+        })
+        .catch(error => handleError(error, response));
+    },
+    cacheHit: function(resultsArray){
+      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 43200) {
+        Trails.deleteByLocationId(Trails.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(resultsArray);
+      }
+    }
+  });
 }
 
-function Trails(result) {
+function Trails (result) {
   this.name = result.name;
   this.location = result.location;
   this.stars = result.stars;
@@ -364,7 +407,18 @@ function Trails(result) {
   this.conditions = result.conditionStatus;
   this.condition_date = result.conditionDate.substring(0, 10);
   this.condition_time = result.conditionDate.substring(11, 20);
+  this.created_at = Date.now();
 }
+
+Trails.prototype = {
+  save: function(location_id) {
+    const SQL = `INSERT INTO ${this.tableName} (name, location, stars, star_votes, summary, trail_url, conditions, condition_date, condition_time, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`;
+    const values = [this.name, this.location, this.stars, this.star_votes, this.summary, this.trail_url, this.conditions, this.condition_date, this.condition_time, this.created_at, location_id];
+    client.query(SQL, values);
+  }
+};
+
+
 
 function handleError(err, res) {
   console.error(err);
@@ -401,8 +455,8 @@ function lookup (options) {
 
 Location.prototype = {
   save: function() {
-    const SQL = 'INSERT INTO locations (search_query, formatted_query, latitude, longitude) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id;';
-    const values = [this.search_query, this.formatted_query, this.latitude, this.longitude];
+    const SQL = 'INSERT INTO locations (search_query, formatted_query, latitude, longitude, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING RETURNING id;';
+    const values = [this.search_query, this.formatted_query, this.latitude, this.longitude, this.created_at];
 
     return client.query(SQL, values)
       .then(result => {
