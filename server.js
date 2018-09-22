@@ -103,18 +103,17 @@ function getMeetup(request, response) {
   const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
   superagent.get(url)
     .then(result => {
-      console.log('result: ', result);
-      // let meetupSummaries = result.body.results.map(selection => {return new Meetup(selection);});
-      response.send('whatever');
+      let meetupSummaries = result.body.events.map(selection => {return new Meetup(selection);});
+      response.send(meetupSummaries);
     });
 }
 
-// function Meetup(result) {
-//   this.link = result. ,
-//   this.name = result. ,
-//   this.creation_date = result. ,
-//   this.host = result.
-// }
+function Meetup(result) {
+  this.link = result.link;
+  this.name = result.name;
+  this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);  ///date???
+  this.host = result.group.name;
+}
 
 
 
