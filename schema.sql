@@ -16,16 +16,16 @@ CREATE TABLE IF NOT EXISTS weathers (
   location_id INTEGER NOT NULL REFERENCES locations(id) 
 );
 
--- CREATE TABLE IF NOT EXISTS yelps (
---   id SERIAL PRIMARY KEY,
---   name VARCHAR (255),
---   image_url TEXT,
---   price VARCHAR (4),
---   rating NUMERIC(2, 1),
---   url TEXT,
---   created_at BIGINT,
---   location_id INTEGER NOT NULL REFERENCES locations(id) 
--- );
+CREATE TABLE IF NOT EXISTS yelps (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR (255),
+  image_url TEXT,
+  price VARCHAR (4),
+  rating NUMERIC(2, 1),
+  url TEXT,
+  created_at BIGINT,
+  location_id INTEGER NOT NULL REFERENCES locations(id) 
+);
 
 -- CREATE TABLE IF NOT EXISTS movies (
 --   id SERIAL PRIMARY KEY,

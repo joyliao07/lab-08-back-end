@@ -24,25 +24,25 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/location', getLocation);
 app.get('/weather', getWeather);
-// app.get('/yelp', getYelp);
+app.get('/yelp', getYelp);
 // app.get('/movies', getMovies);
 // app.get('/meetups', getMeetup);
 // app.get('/trails', getTrails);
 
 Weather.lookup = lookup;
-// Business.lookup = lookup;
+Business.lookup = lookup;
 // Movie.lookup = lookup;
 // Meetup.lookup = lookup;
 // Trails.lookup = lookup;
 
 Weather.deleteByLocationId = deleteByLocationId;
-// Business.deleteByLocationId = deleteByLocationId;
+Business.deleteByLocationId = deleteByLocationId;
 // Movie.deleteByLocationId = deleteByLocationId;
 // Meetup.deleteByLocationId = deleteByLocationId;
 // Trails.deleteByLocationId = deleteByLocationId;
 
 Weather.tableName = 'weathers';
-// Yelp.tableName = 'yelps';
+Business.tableName = 'yelps';
 // Movie.tableName = 'movies';
 
 
@@ -93,6 +93,12 @@ function getLocation (request, response){
 //     .catch(error => handleError(error, response));
 // }
 
+// function Weather(day){
+//   this.time = new Date(day.time * 1000).toString().slice(0, 15);
+//   this.forecast = day.summary;
+// }
+
+
 function getWeather (request, response) {
   Weather.lookup({
     tableName: Weather.tableName,
@@ -122,12 +128,6 @@ function getWeather (request, response) {
   });
 }
 
-
-// function Weather(day){
-//   this.time = new Date(day.time * 1000).toString().slice(0, 15);
-//   this.forecast = day.summary;
-// }
-
 function Weather (day) {
   this.tableName = 'weathers';
   this.created_at = Date.now();
@@ -141,27 +141,79 @@ Weather.prototype = {
     const values = [this.forecast, this.time, this.created_at, location_id];
     client.query(SQL, values);
   }
+};
+
+// function getYelp(request, response){
+//   const url = `https://api.yelp.com/v3/businesses/search?location=${request.query.data.search_query}`;
+//   superagent
+//     .get(url)
+//     .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
+//     .then(result =>{
+//       let yelpSummaries = result.body.businesses.map(restaurant => {return new Business(restaurant);});
+//       response.send(yelpSummaries);
+//     })
+//     .catch(error => handleError(error, response));
+// }
+
+// function Business(result){
+//   this.name = result.name;
+//   this.image_url = result.image_url;
+//   this.price = result.price;
+//   this.rating = result.rating;
+//   this.url = result.url;
+// }
+
+function getYelp (request, response) {
+  Business.lookup({
+    tableName: Business.tableName,
+    cacheMiss: function () {
+      const url = `https://api.yelp.com/v3/businesses/search?location=${request.query.data.search_query}`;
+
+      superagent.get(url)
+        .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
+        .then(result => {
+          const yelpSummaries = result.body.businesses.map(food => {
+            let summary = new Business(food);
+            summary.save(request.query.data.id);
+            return summary;
+          });
+          response.send(yelpSummaries);
+        })
+        .catch(error => handleError(error, response));
+    },
+    cacheHit: function(resultsArray){
+      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 43200) {
+        Business.deleteByLocationId(Business.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(resultsArray);
+      }
+    }
+  });
 }
 
-function getYelp(request, response){
-  const url = `https://api.yelp.com/v3/businesses/search?location=${request.query.data.search_query}`;
-  superagent
-    .get(url)
-    .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
-    .then(result =>{
-      let yelpSummaries = result.body.businesses.map(restaurant => {return new Business(restaurant);});
-      response.send(yelpSummaries);
-    })
-    .catch(error => handleError(error, response));
+function Business (food) {
+  this.tableName = 'yelps';
+  this.name = food.name;
+  this.image_url = food.image_url;
+  this.price = food.price;
+  this.rating = food.rating;
+  this.url = food.url;
+  this.created_at = Date.now();
 }
 
-function Business(result){
-  this.name = result.name;
-  this.image_url = result.image_url;
-  this.price = result.price;
-  this.rating = result.rating;
-  this.url = result.url;
-}
+Business.prototype = {
+  save: function(location_id){
+    const SQL = `INSERT INTO ${this.tableName} (name, image_url, price, rating, url, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
+    const values = [this.name, this.image_url, this.price, this.rating, this.url, location_id];
+    client.query(SQL, values);
+  }
+};
+
+
+
+
 
 
 function getMovies(request, response){
@@ -274,7 +326,7 @@ Location.prototype = {
 };
 
 //this is duplicated code????
-Location.lookupLocation = (location) => { 
+Location.lookupLocation = (location) => {
   const SQL = 'SELECT * FROM locations WHERE search_query=$1;';
   const values = [location.query];
 
@@ -287,7 +339,7 @@ Location.lookupLocation = (location) => {
       }
     })
     .catch(console.error);
-}
+};
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
