@@ -25,6 +25,7 @@ app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
 app.get('/meetups', getMeetup);
+app.get('/trails', getTrails);
 
 
 function searchToLatLong(query){
@@ -111,12 +112,33 @@ function getMeetup(request, response) {
 function Meetup(result) {
   this.link = result.link;
   this.name = result.name;
-  this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);  ///date???
+  this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);
   this.host = result.group.name;
 }
 
 
+function getTrails(request, response) {
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
 
+  superagent.get(url)
+    .then(result => {
+      console.log(result.body.trails[0]);
+      let trailsSummaries = result.body.trails.map(selection => {return new Trails(selection);});
+      response.send(trailsSummaries);
+    });
+}
+
+function Trails(result) {
+  this.name = result.name;
+  this.location = result.location;
+  this.stars = result.stars;
+  this.star_votes = result.starVotes;
+  this.summary = result.summary;
+  this.trail_url = result.url;
+  this.conditions = result.conditionStatus;
+  this.condition_date = result.conditionDate.substring(0, 10);
+  this.condition_time = result.conditionDate.substring(11, 20);
+}
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
