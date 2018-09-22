@@ -5,8 +5,8 @@ const superagent = require('superagent');
 const cors = require('cors');
 const app = express();
 const pg = require('pg');
-
 require('dotenv').config();
+
 const client = new pg.Client(process.env.DATABASE_URL);
 client.connect();
 
@@ -18,14 +18,15 @@ const PORT = process.env.PORT || 3000;
 //API routes
 app.get('/location', (request, response) => {
   searchToLatLong(request.query.data)
-    .then(location => response.send(location));
+    .then(location => response.send(location))
+    .catch(error => handleError(error, response));
 });
 
 app.get('/weather', getWeather);
-app.get('/yelp', getYelp);
-app.get('/movies', getMovies);
-app.get('/meetups', getMeetup);
-app.get('/trails', getTrails);
+// app.get('/yelp', getYelp);
+// app.get('/movies', getMovies);
+// app.get('/meetups', getMeetup);
+// app.get('/trails', getTrails);
 
 
 function searchToLatLong(query){
@@ -41,6 +42,7 @@ function searchToLatLong(query){
 
     });
 }
+
 
 
 function getWeather(request, response){
@@ -122,7 +124,6 @@ function getTrails(request, response) {
 
   superagent.get(url)
     .then(result => {
-      console.log(result.body.trails[0]);
       let trailsSummaries = result.body.trails.map(selection => {return new Trails(selection);});
       response.send(trailsSummaries);
     });
@@ -139,6 +140,13 @@ function Trails(result) {
   this.condition_date = result.conditionDate.substring(0, 10);
   this.condition_time = result.conditionDate.substring(11, 20);
 }
+
+function handleError(err, res) {
+  console.error(err);
+  if (res) res.status(500).send('Sorry, something went wrong');
+}
+
+
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
