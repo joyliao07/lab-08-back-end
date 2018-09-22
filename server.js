@@ -25,25 +25,25 @@ const PORT = process.env.PORT || 3000;
 app.get('/location', getLocation);
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
-// app.get('/movies', getMovies);
+app.get('/movies', getMovies);
 // app.get('/meetups', getMeetup);
 // app.get('/trails', getTrails);
 
 Weather.lookup = lookup;
 Business.lookup = lookup;
-// Movie.lookup = lookup;
+Movie.lookup = lookup;
 // Meetup.lookup = lookup;
 // Trails.lookup = lookup;
 
 Weather.deleteByLocationId = deleteByLocationId;
 Business.deleteByLocationId = deleteByLocationId;
-// Movie.deleteByLocationId = deleteByLocationId;
+Movie.deleteByLocationId = deleteByLocationId;
 // Meetup.deleteByLocationId = deleteByLocationId;
 // Trails.deleteByLocationId = deleteByLocationId;
 
 Weather.tableName = 'weathers';
 Business.tableName = 'yelps';
-// Movie.tableName = 'movies';
+Movie.tableName = 'movies';
 
 
 // function searchToLatLong(query){
@@ -97,7 +97,6 @@ function getLocation (request, response){
 //   this.time = new Date(day.time * 1000).toString().slice(0, 15);
 //   this.forecast = day.summary;
 // }
-
 
 function getWeather (request, response) {
   Weather.lookup({
@@ -211,32 +210,88 @@ Business.prototype = {
   }
 };
 
+// function getMovies(request, response){
+//   const url = `https://api.themoviedb.org/3/search/movie/?api_key=${process.env.MOVIE_API_KEY}&query=${request.query.data.search_query}`;
+//   superagent
+//     .get(url)
+//     .then(result => {
+//       let movieSummaries = result.body.results.map(selection => {return new Movie(selection);});
+//       response.send(movieSummaries);
+//     })
+//     .catch(error => handleError(error, response));
+// }
 
 
+// function Movie(selection){
+//   this.title = selection.title;
+//   this.released_date = selection.release_date;
+//   this.vote_total = selection.vote_count;
+//   this.vote_average = selection.vote_average;
+//   this.popularity = selection.popularity;
+//   this.image_url = `https://image.tmdb.org/t/p/w500${selection.poster_path}`;
+//   this.overview = selection.overview;
+// }
 
+function getMovies (request, response) {
+  Movie.lookup({
+    tableName: Movie.tableName,
+    cacheMiss: function () {
+      const url = `https://api.themoviedb.org/3/search/movie/?api_key=${process.env.MOVIE_API_KEY}&query=${request.query.data.search_query}`;
 
-
-function getMovies(request, response){
-  const url = `https://api.themoviedb.org/3/search/movie/?api_key=${process.env.MOVIE_API_KEY}&query=${request.query.data.search_query}`;
-  superagent
-    .get(url)
-    .then(result => {
-      let movieSummaries = result.body.results.map(selection => {return new Movie(selection);});
-      response.send(movieSummaries);
-    })
-    .catch(error => handleError(error, response));
+      superagent.get(url)
+        .then(result => {
+          const movieSummaries = result.body.results.map( movie => {
+            let summary = new Movie(movie);
+            summary.save(request.query.data.id);
+            return summary;
+          });
+          response.send(movieSummaries);
+        })
+        .catch(error => handleError(error, response));
+    },
+    cacheHit: function(resultsArray){
+      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 43200) {
+        Movie.deleteByLocationId(Movie.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(resultsArray);
+      }
+    }
+  });
 }
 
-
-function Movie(selection){
-  this.title = selection.title;
-  this.released_date = selection.release_date;
-  this.vote_total = selection.vote_count;
-  this.vote_average = selection.vote_average;
-  this.popularity = selection.popularity;
-  this.image_url = `https://image.tmdb.org/t/p/w500${selection.poster_path}`;
-  this.overview = selection.overview;
+function Movie (see) {
+  this.title = see.title;
+  this.released_date = see.release_date;
+  this.vote_total = see.vote_count;
+  this.vote_average = see.vote_average;
+  this.popularity = see.popularity;
+  this.image_url = `https://image.tmdb.org/t/p/w500${see.poster_path}`;
+  this.overview = see.overview;
 }
+
+Movie.prototype = {
+  save: function(location_id) {
+    const SQL = `INSERT INTO ${this.tableName} (title, overview, average_votes, total_votes, image_url, popularity, released_on, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
+    const values = [this.title, this.overview, this.average_votes, this.total_votes, this.image_url, this.popularity, this.released_on, location_id];
+    client.query(SQL, values);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function getMeetup(request, response) {
   const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;

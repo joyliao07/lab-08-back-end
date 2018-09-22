@@ -27,16 +27,16 @@ CREATE TABLE IF NOT EXISTS yelps (
   location_id INTEGER NOT NULL REFERENCES locations(id) 
 );
 
--- CREATE TABLE IF NOT EXISTS movies (
---   id SERIAL PRIMARY KEY,
---   title VARCHAR (255),
---   overview TEXT,
---   average_votes NUMERIC(2,1),
---   total_votes SMALLINT,
---   image_url TEXT,
---   popularity NUMERIC (6, 3),
---   released_on VARCHAR (10),
---   created_at BIGINT,
---   location_id INTEGER NOT NULL REFERENCES locations(id) 
--- );
+CREATE TABLE IF NOT EXISTS movies (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR (255),
+  overview TEXT,
+  average_votes NUMERIC(2,1),
+  total_votes SMALLINT,
+  image_url TEXT,
+  popularity NUMERIC (6, 3),
+  released_on VARCHAR (10),
+  created_at BIGINT,
+  location_id INTEGER NOT NULL REFERENCES locations(id) 
+);
 
