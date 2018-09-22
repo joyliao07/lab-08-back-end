@@ -29,18 +29,21 @@ app.get('/movies', getMovies);
 // app.get('/meetups', getMeetup);
 // app.get('/trails', getTrails);
 
+Location.lookup = lookup;
 Weather.lookup = lookup;
 Business.lookup = lookup;
 Movie.lookup = lookup;
 // Meetup.lookup = lookup;
 // Trails.lookup = lookup;
 
+Location.deleteByLocationId = deleteByLocationId;
 Weather.deleteByLocationId = deleteByLocationId;
 Business.deleteByLocationId = deleteByLocationId;
 Movie.deleteByLocationId = deleteByLocationId;
 // Meetup.deleteByLocationId = deleteByLocationId;
 // Trails.deleteByLocationId = deleteByLocationId;
 
+Location.tableName = 'locations';
 Weather.tableName = 'weathers';
 Business.tableName = 'yelps';
 Movie.tableName = 'movies';
@@ -280,19 +283,6 @@ Movie.prototype = {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 function getMeetup(request, response) {
   const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
   superagent.get(url)
@@ -380,7 +370,7 @@ Location.prototype = {
   }
 };
 
-//this is duplicated code????
+
 Location.lookupLocation = (location) => {
   const SQL = 'SELECT * FROM locations WHERE search_query=$1;';
   const values = [location.query];
