@@ -406,7 +406,7 @@ function Trails (result) {
   this.trail_url = result.url;
   this.conditions = result.conditionStatus;
   this.condition_date = result.conditionDate.substring(0, 10);
-  this.condition_time = result.conditionDate.substring(11, 20);
+  this.condition_time = result.conditionDate.substring(12, 19);
   this.created_at = Date.now();
 }
 
@@ -457,12 +457,12 @@ Location.prototype = {
   save: function() {
     const SQL = 'INSERT INTO locations (search_query, formatted_query, latitude, longitude, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING RETURNING id;';
     const values = [this.search_query, this.formatted_query, this.latitude, this.longitude, this.created_at];
-
     return client.query(SQL, values)
       .then(result => {
         this.id = result.rows[0].id;
         return this;
-      });
+      })
+      .catch(error => handleError(error));
   }
 };
 
@@ -479,7 +479,7 @@ Location.lookupLocation = (location) => {
         location.cacheMiss();
       }
     })
-    .catch(console.error);
+    .catch(error => handleError(error));
 };
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
