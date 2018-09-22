@@ -306,7 +306,7 @@ function getMeetup (request, response) {
 
       superagent.get(url)
         .then(result => {
-          let meetupSummaries = result.body.results.map( meetup => {
+          let meetupSummaries = result.body.events.map( meetup => {
             let summary = new Meetup(meetup);
             summary.save(request.query.data.id);
             return summary;
