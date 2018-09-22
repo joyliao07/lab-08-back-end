@@ -5,7 +5,7 @@ const superagent = require('superagent');
 const cors = require('cors');
 const app = express();
 const pg = require('pg');
-require('dotenv').config();
+require('dotenv').config(); //needs to be above DATABASE_URL
 
 const client = new pg.Client(process.env.DATABASE_URL);
 client.connect();
@@ -67,7 +67,7 @@ Trails.tableName = 'trails';
 function getLocation (request, response){
   Location.lookupLocation({
     tableName: Location.tableName,
-    query: request.query.data,
+    query: request.query.data, //query is called here
 
     cacheHit: function (result) {
       response.send(result);
@@ -168,6 +168,17 @@ Weather.prototype = {
 function getYelp (request, response) {
   Business.lookup({
     tableName: Business.tableName,
+
+    cacheHit: function(results){
+      let ageOfResultsInHours = (Date.now()-results.rows[0].created_at)/(1000*60*60);
+      if(ageOfResultsInHours > 24) {
+        Business.deleteByLocationId(Business.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(results.rows);
+      }
+    },
+
     cacheMiss: function () {
       const url = `https://api.yelp.com/v3/businesses/search?location=${request.query.data.search_query}`;
 
@@ -182,16 +193,8 @@ function getYelp (request, response) {
           response.send(yelpSummaries);
         })
         .catch(error => handleError(error, response));
-    },
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 43200) {
-        Business.deleteByLocationId(Business.tableName, request.query.data.id);
-        this.cacheMiss();
-      } else {
-        response.send(resultsArray);
-      }
     }
+
   });
 }
 
@@ -237,6 +240,17 @@ Business.prototype = {
 function getMovies (request, response) {
   Movie.lookup({
     tableName: Movie.tableName,
+
+    cacheHit: function(resultsArray){
+      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 43200) {
+        Movie.deleteByLocationId(Movie.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(resultsArray);
+      }
+    },
+
     cacheMiss: function () {
       const url = `https://api.themoviedb.org/3/search/movie/?api_key=${process.env.MOVIE_API_KEY}&query=${request.query.data.search_query}`;
 
@@ -250,15 +264,6 @@ function getMovies (request, response) {
           response.send(movieSummaries);
         })
         .catch(error => handleError(error, response));
-    },
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 43200) {
-        Movie.deleteByLocationId(Movie.tableName, request.query.data.id);
-        this.cacheMiss();
-      } else {
-        response.send(resultsArray);
-      }
     }
   });
 }
@@ -303,6 +308,17 @@ Movie.prototype = {
 function getMeetup (request, response) {
   Meetup.lookup({
     tableName: Meetup.tableName,
+
+    cacheHit: function(resultsArray){
+      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 43200) {
+        Meetup.deleteByLocationId(Meetup.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(resultsArray);
+      }
+    },
+
     cacheMiss: function () {
       const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
 
@@ -316,15 +332,6 @@ function getMeetup (request, response) {
           response.send(meetupSummaries);
         })
         .catch(error => handleError(error, response));
-    },
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 43200) {
-        Meetup.deleteByLocationId(Meetup.tableName, request.query.data.id);
-        this.cacheMiss();
-      } else {
-        response.send(resultsArray);
-      }
     }
   });
 }
@@ -371,6 +378,17 @@ Meetup.prototype = {
 function getTrails (request, response) {
   Trails.lookup({
     tableName: Trails.tableName,
+
+    cacheHit: function(resultsArray){
+      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 43200) {
+        Trails.deleteByLocationId(Trails.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(resultsArray);
+      }
+    },
+
     cacheMiss: function () {
       const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
 
@@ -384,15 +402,6 @@ function getTrails (request, response) {
           response.send(trailSummaries);
         })
         .catch(error => handleError(error, response));
-    },
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 43200) {
-        Trails.deleteByLocationId(Trails.tableName, request.query.data.id);
-        this.cacheMiss();
-      } else {
-        response.send(resultsArray);
-      }
     }
   });
 }
