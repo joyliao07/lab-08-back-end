@@ -26,28 +26,28 @@ app.get('/location', getLocation);
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
-// app.get('/meetups', getMeetup);
+app.get('/meetups', getMeetup);
 // app.get('/trails', getTrails);
 
 Location.lookup = lookup;
 Weather.lookup = lookup;
 Business.lookup = lookup;
 Movie.lookup = lookup;
-// Meetup.lookup = lookup;
+Meetup.lookup = lookup;
 // Trails.lookup = lookup;
 
 Location.deleteByLocationId = deleteByLocationId;
 Weather.deleteByLocationId = deleteByLocationId;
 Business.deleteByLocationId = deleteByLocationId;
 Movie.deleteByLocationId = deleteByLocationId;
-// Meetup.deleteByLocationId = deleteByLocationId;
+Meetup.deleteByLocationId = deleteByLocationId;
 // Trails.deleteByLocationId = deleteByLocationId;
 
 Location.tableName = 'locations';
 Weather.tableName = 'weathers';
 Business.tableName = 'yelps';
 Movie.tableName = 'movies';
-
+Meetup.tableName = 'meetups';
 
 // function searchToLatLong(query){
 //   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_API_KEY}`;
@@ -281,23 +281,67 @@ Movie.prototype = {
 };
 
 
-function getMeetup(request, response) {
-  const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
-  superagent.get(url)
-    .then(result => {
-      let meetupSummaries = result.body.events.map(selection => {return new Meetup(selection);});
-      response.send(meetupSummaries);
-    })
-    .catch(error => handleError(error, response));
+// function getMeetup(request, response) {
+//   const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
+//   superagent.get(url)
+//     .then(result => {
+//       let meetupSummaries = result.body.events.map(selection => {return new Meetup(selection);});
+//       response.send(meetupSummaries);
+//     })
+//     .catch(error => handleError(error, response));
+// }
+
+// function Meetup(result) {
+//   this.link = result.link;
+//   this.name = result.name;
+//   this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);
+//   this.host = result.group.name;
+// }
+
+function getMeetup (request, response) {
+  Meetup.lookup({
+    tableName: Meetup.tableName,
+    cacheMiss: function () {
+      const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
+
+      superagent.get(url)
+        .then(result => {
+          let meetupSummaries = result.body.results.map( meetup => {
+            let summary = new Meetup(meetup);
+            summary.save(request.query.data.id);
+            return summary;
+          });
+          response.send(meetupSummaries);
+        })
+        .catch(error => handleError(error, response));
+    },
+    cacheHit: function(resultsArray){
+      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 43200) {
+        Meetup.deleteByLocationId(Meetup.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(resultsArray);
+      }
+    }
+  });
 }
 
-function Meetup(result) {
+function Meetup (result) {
   this.link = result.link;
   this.name = result.name;
   this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);
   this.host = result.group.name;
+  this.created_at = Date.now();
 }
 
+Meetup.prototype = {
+  save: function(location_id) {
+    const SQL = `INSERT INTO ${this.tableName} (link, name, creation_date, host, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
+    const values = [this.link, this.name, this.creation_date, this.host, this.created_at, location_id];
+    client.query(SQL, values);
+  }
+};
 
 function getTrails(request, response) {
   const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
