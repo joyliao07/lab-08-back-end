@@ -131,10 +131,9 @@ function getWeather (request, response) {
 }
 
 function Weather (day) {
-  this.tableName = 'weathers';
-  this.created_at = Date.now();
-  this.time = new Date(day.time * 1000).toString().slice(0, 15);
   this.forecast = day.summary;
+  this.time = new Date(day.time * 1000).toString().slice(0, 15);
+  this.created_at = Date.now();
 }
 
 Weather.prototype = {
@@ -196,7 +195,6 @@ function getYelp (request, response) {
 }
 
 function Business (food) {
-  this.tableName = 'yelps';
   this.name = food.name;
   this.image_url = food.image_url;
   this.price = food.price;
@@ -266,12 +264,12 @@ function getMovies (request, response) {
 
 function Movie (see) {
   this.title = see.title;
-  this.released_date = see.release_date;
-  this.vote_total = see.vote_count;
-  this.vote_average = see.vote_average;
-  this.popularity = see.popularity;
-  this.image_url = `https://image.tmdb.org/t/p/w500${see.poster_path}`;
   this.overview = see.overview;
+  this.average_votes = see.vote_average;
+  this.total_votes = see.vote_count;
+  this.image_url = `https://image.tmdb.org/t/p/w500${see.poster_path}`;
+  this.popularity = see.popularity;
+  this.released_on = see.release_date;
 }
 
 Movie.prototype = {

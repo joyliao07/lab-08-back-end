@@ -30,6 +30,18 @@ CREATE TABLE IF NOT EXISTS yelps (
 CREATE TABLE IF NOT EXISTS movies (
   id SERIAL PRIMARY KEY,
   title VARCHAR (255),
+  released_on VARCHAR (10),
+  vote_total SMALLINT,
+  average_votes NUMERIC(2,1),
+  popularity NUMERIC (6, 3),
+  image_url TEXT,
+  overview TEXT,
+  location_id INTEGER NOT NULL REFERENCES locations(id) 
+);
+
+CREATE TABLE IF NOT EXISTS meetups (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR (255),
   overview TEXT,
   average_votes NUMERIC(2,1),
   total_votes SMALLINT,
@@ -39,4 +51,3 @@ CREATE TABLE IF NOT EXISTS movies (
   created_at BIGINT,
   location_id INTEGER NOT NULL REFERENCES locations(id) 
 );
-
