@@ -8,13 +8,13 @@ CREATE TABLE IF NOT EXISTS locations (
   longitude NUMERIC(9, 6) 
 );
 
--- CREATE TABLE IF NOT EXISTS weathers ( 
---   id SERIAL PRIMARY KEY, 
---   forecast VARCHAR(255), 
---   time VARCHAR(255), 
---   created_at BIGINT,
---   location_id INTEGER NOT NULL REFERENCES locations(id) 
--- );
+CREATE TABLE IF NOT EXISTS weathers ( 
+  id SERIAL PRIMARY KEY, 
+  forecast VARCHAR(255), 
+  time VARCHAR(255), 
+  created_at BIGINT,
+  location_id INTEGER NOT NULL REFERENCES locations(id) 
+);
 
 -- CREATE TABLE IF NOT EXISTS yelps (
 --   id SERIAL PRIMARY KEY,
