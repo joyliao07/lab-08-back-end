@@ -24,6 +24,7 @@ app.get('/location', (request, response) => {
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
+app.get('/meetups', getMeetup);
 
 
 function searchToLatLong(query){
@@ -50,6 +51,7 @@ function getWeather(request, response){
       response.send(weatherSummaries);
     });
 }
+
 function Weather(day){
   this.time = new Date(day.time * 1000).toString().slice(0, 15);
   this.forecast = day.summary;
@@ -66,6 +68,7 @@ function getYelp(request, response){
       response.send(yelpSummaries);
     });
 }
+
 function Business(result){
   this.name = result.name;
   this.image_url = result.image_url;
@@ -84,6 +87,8 @@ function getMovies(request, response){
       response.send(movieSummaries);
     });
 }
+
+
 function Movie(selection){
   this.title = selection.title;
   this.released_date = selection.release_date;
@@ -94,6 +99,22 @@ function Movie(selection){
   this.overview = selection.overview;
 }
 
+function getMeetup(request, response) {
+  const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
+  superagent.get(url)
+    .then(result => {
+      console.log('result: ', result);
+      // let meetupSummaries = result.body.results.map(selection => {return new Meetup(selection);});
+      response.send('whatever');
+    });
+}
+
+// function Meetup(result) {
+//   this.link = result. ,
+//   this.name = result. ,
+//   this.creation_date = result. ,
+//   this.host = result.
+// }
 
 
 
