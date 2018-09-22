@@ -105,6 +105,17 @@ function getLocation (request, response){
 function getWeather (request, response) {
   Weather.lookup({
     tableName: Weather.tableName,
+
+    cacheHit: function(results){
+      let ageOfResultsInMinutes = (Date.now()-results.rows[0].created_at)/(1000*60);
+      if(ageOfResultsInMinutes > 30) {
+        Weather.deleteByLocationId(Weather.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(results.rows);
+      }
+    },
+
     cacheMiss: function () {
       const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
 
@@ -118,15 +129,6 @@ function getWeather (request, response) {
           response.send(weatherSummaries);
         })
         .catch(error => handleError(error, response));
-    },
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 30) {
-        Weather.deleteByLocationId(Weather.tableName, request.query.data.id);
-        this.cacheMiss();
-      } else {
-        response.send(resultsArray);
-      }
     }
   });
 }
@@ -185,8 +187,8 @@ function getYelp (request, response) {
       superagent.get(url)
         .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
         .then(result => {
-          const yelpSummaries = result.body.businesses.map(food => {
-            let summary = new Business(food);
+          const yelpSummaries = result.body.businesses.map(yelp => {
+            let summary = new Business(yelp);
             summary.save(request.query.data.id);
             return summary;
           });
@@ -198,12 +200,12 @@ function getYelp (request, response) {
   });
 }
 
-function Business (food) {
-  this.name = food.name;
-  this.image_url = food.image_url;
-  this.price = food.price;
-  this.rating = food.rating;
-  this.url = food.url;
+function Business (yelp) {
+  this.name = yelp.name;
+  this.image_url = yelp.image_url;
+  this.price = yelp.price;
+  this.rating = yelp.rating;
+  this.url = yelp.url;
   this.created_at = Date.now();
 }
 
@@ -241,13 +243,13 @@ function getMovies (request, response) {
   Movie.lookup({
     tableName: Movie.tableName,
 
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 43200) {
+    cacheHit: function(results){
+      let ageOfResultsInDays = (Date.now()-results.rows[0].created_at)/(1000*60*60*24);
+      if(ageOfResultsInDays > 3) {
         Movie.deleteByLocationId(Movie.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(resultsArray);
+        response.send(results.rows);
       }
     },
 
@@ -309,13 +311,13 @@ function getMeetup (request, response) {
   Meetup.lookup({
     tableName: Meetup.tableName,
 
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 43200) {
+    cacheHit: function(results){
+      let ageOfResultsInHours = (Date.now()-results.rows[0].created_at)/(1000*60*60);
+      if(ageOfResultsInHours > 24) {
         Meetup.deleteByLocationId(Meetup.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(resultsArray);
+        response.send(results.rows);
       }
     },
 
@@ -379,13 +381,13 @@ function getTrails (request, response) {
   Trails.lookup({
     tableName: Trails.tableName,
 
-    cacheHit: function(resultsArray){
-      let ageOfResultsInMinutes = (Date.now()-resultsArray[0].created_at)/(1000*60);
-      if(ageOfResultsInMinutes > 43200) {
+    cacheHit: function(results){
+      let ageOfResultsInDays = (Date.now()-results.rows[0].created_at)/(1000*60*60*24);
+      if(ageOfResultsInDays > 7) {
         Trails.deleteByLocationId(Trails.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(resultsArray);
+        response.send(results.rows);
       }
     },
 
