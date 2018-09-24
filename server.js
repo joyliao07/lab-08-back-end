@@ -19,29 +19,29 @@ app.get('/location', getLocation);
 app.get('/weather', getWeather);
 app.get('/yelp', getYelp);
 app.get('/movies', getMovies);
-// app.get('/meetups', getMeetup);
-// app.get('/trails', getTrails);
+app.get('/meetups', getMeetup);
+app.get('/trails', getTrails);
 
 Location.lookup = lookup;
 Weather.lookup = lookup;
 Business.lookup = lookup;
 Movie.lookup = lookup;
-// Meetup.lookup = lookup;
-// Trails.lookup = lookup;
+Meetup.lookup = lookup;
+Trails.lookup = lookup;
 
 Location.deleteByLocationId = deleteByLocationId;
 Weather.deleteByLocationId = deleteByLocationId;
 Business.deleteByLocationId = deleteByLocationId;
 Movie.deleteByLocationId = deleteByLocationId;
-// Meetup.deleteByLocationId = deleteByLocationId;
-// Trails.deleteByLocationId = deleteByLocationId;
+Meetup.deleteByLocationId = deleteByLocationId;
+Trails.deleteByLocationId = deleteByLocationId;
 
 Location.tableName = 'locations';
 Weather.tableName = 'weathers';
 Business.tableName = 'yelps';
 Movie.tableName = 'movies';
-// Meetup.tableName = 'meetups';
-// Trails.tableName = 'trails';
+Meetup.tableName = 'meetups';
+Trails.tableName = 'trails';
 
 function getLocation (request, response){
   Location.lookupLocation({
@@ -213,106 +213,106 @@ Movie.prototype = {
   }
 };
 
-// function getMeetup (request, response) {
-//   Meetup.lookup({
-//     tableName: Meetup.tableName,
+function getMeetup (request, response) {
+  Meetup.lookup({
+    tableName: Meetup.tableName,
 
-//     cacheHit: function(results){
-//       let ageOfResultsInHours = (Date.now()-results.rows[0].created_at)/(1000*60*60);
-//       if(ageOfResultsInHours > 24) {
-//         Meetup.deleteByLocationId(Meetup.tableName, request.query.data.id);
-//         this.cacheMiss();
-//       } else {
-//         response.send(results.rows);
-//       }
-//     },
+    cacheHit: function(results){
+      let ageOfResultsInHours = (Date.now()-results.rows[0].created_at)/(1000*60*60);
+      if(ageOfResultsInHours > 24) {
+        Meetup.deleteByLocationId(Meetup.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(results.rows);
+      }
+    },
 
-//     cacheMiss: function () {
-//       const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
+    cacheMiss: function () {
+      const url = `https://api.meetup.com/find/upcoming_events?photo-host=public&page=20&sign=true&lon=${request.query.data.longitude}&lat=${request.query.data.latitude}&key=${process.env.MEETUP_API_KEY}`;
 
-//       superagent.get(url)
-//         .then(result => {
-//           let meetupSummaries = result.body.events.map( meetup => {
-//             let summary = new Meetup(meetup);
-//             summary.save(request.query.data.id);
-//             return summary;
-//           });
-//           response.send(meetupSummaries);
-//         })
-//         .catch(error => handleError(error, response));
-//     }
-//   });
-// }
+      superagent.get(url)
+        .then(result => {
+          let meetupSummaries = result.body.events.map( meetup => {
+            let summary = new Meetup(meetup);
+            summary.save(request.query.data.id);
+            return summary;
+          });
+          response.send(meetupSummaries);
+        })
+        .catch(error => handleError(error, response));
+    }
+  });
+}
 
-// function Meetup (result) {
-//   this.tableName = 'meetups';
-//   this.link = result.link;
-//   this.name = result.name;
-//   this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);
-//   this.host = result.group.name;
-//   this.created_at = Date.now();
-// }
+function Meetup (result) {
+  this.tableName = 'meetups';
+  this.link = result.link;
+  this.name = result.name;
+  this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);
+  this.host = result.group.name;
+  this.created_at = Date.now();
+}
 
-// Meetup.prototype = {
-//   save: function(location_id) {
-//     const SQL = `INSERT INTO ${this.tableName} (link, name, creation_date, host, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
-//     const values = [this.link, this.name, this.creation_date, this.host, this.created_at, location_id];
-//     client.query(SQL, values);
-//   }
-// };
+Meetup.prototype = {
+  save: function(location_id) {
+    const SQL = `INSERT INTO ${this.tableName} (link, name, creation_date, host, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6);`;
+    const values = [this.link, this.name, this.creation_date, this.host, this.created_at, location_id];
+    client.query(SQL, values);
+  }
+};
 
-// function getTrails (request, response) {
-//   Trails.lookup({
-//     tableName: Trails.tableName,
+function getTrails (request, response) {
+  Trails.lookup({
+    tableName: Trails.tableName,
 
-//     cacheHit: function(results){
-//       let ageOfResultsInDays = (Date.now()-results.rows[0].created_at)/(1000*60*60*24);
-//       if(ageOfResultsInDays > 7) {
-//         Trails.deleteByLocationId(Trails.tableName, request.query.data.id);
-//         this.cacheMiss();
-//       } else {
-//         response.send(results.rows);
-//       }
-//     },
+    cacheHit: function(results){
+      let ageOfResultsInDays = (Date.now()-results.rows[0].created_at)/(1000*60*60*24);
+      if(ageOfResultsInDays > 7) {
+        Trails.deleteByLocationId(Trails.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(results.rows);
+      }
+    },
 
-//     cacheMiss: function () {
-//       const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
+    cacheMiss: function () {
+      const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
 
-//       superagent.get(url)
-//         .then(result => {
-//           let trailSummaries = result.body.trails.map( trails => {
-//             let summary = new Trails(trails);
-//             summary.save(request.query.data.id);
-//             return summary;
-//           });
-//           response.send(trailSummaries);
-//         })
-//         .catch(error => handleError(error, response));
-//     }
-//   });
-// }
+      superagent.get(url)
+        .then(result => {
+          let trailSummaries = result.body.trails.map( trails => {
+            let summary = new Trails(trails);
+            summary.save(request.query.data.id);
+            return summary;
+          });
+          response.send(trailSummaries);
+        })
+        .catch(error => handleError(error, response));
+    }
+  });
+}
 
-// function Trails (result) {
-//   this.tableName = 'trails';
-//   this.name = result.name;
-//   this.location = result.location;
-//   this.stars = result.stars;
-//   this.star_votes = result.starVotes;
-//   this.summary = result.summary;
-//   this.trail_url = result.url;
-//   this.conditions = result.conditionStatus;
-//   this.condition_date = result.conditionDate.substring(0, 10);
-//   this.condition_time = result.conditionDate.substring(12, 19);
-//   this.created_at = Date.now();
-// }
+function Trails (result) {
+  this.tableName = 'trails';
+  this.name = result.name;
+  this.location = result.location;
+  this.stars = result.stars;
+  this.star_votes = result.starVotes;
+  this.summary = result.summary;
+  this.trail_url = result.url;
+  this.conditions = result.conditionStatus;
+  this.condition_date = result.conditionDate.substring(0, 10);
+  this.condition_time = result.conditionDate.substring(12, 19);
+  this.created_at = Date.now();
+}
 
-// Trails.prototype = {
-//   save: function(location_id) {
-//     const SQL = `INSERT INTO ${this.tableName} (name, location, stars, star_votes, summary, trail_url, conditions, condition_date, condition_time, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`;
-//     const values = [this.name, this.location, this.stars, this.star_votes, this.summary, this.trail_url, this.conditions, this.condition_date, this.condition_time, this.created_at, location_id];
-//     client.query(SQL, values);
-//   }
-// };
+Trails.prototype = {
+  save: function(location_id) {
+    const SQL = `INSERT INTO ${this.tableName} (name, location, stars, star_votes, summary, trail_url, conditions, condition_date, condition_time, created_at, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`;
+    const values = [this.name, this.location, this.stars, this.star_votes, this.summary, this.trail_url, this.conditions, this.condition_date, this.condition_time, this.created_at, location_id];
+    client.query(SQL, values);
+  }
+};
 
 
 
