@@ -134,6 +134,7 @@ function getWeather (request, response) {
 }
 
 function Weather (day) {
+  this.tableName = 'weathers';
   this.forecast = day.summary;
   this.time = new Date(day.time * 1000).toString().slice(0, 15);
   this.created_at = Date.now();
@@ -201,6 +202,7 @@ function getYelp (request, response) {
 }
 
 function Business (yelp) {
+  this.tableName = 'yelps';
   this.name = yelp.name;
   this.image_url = yelp.image_url;
   this.price = yelp.price;
@@ -271,6 +273,7 @@ function getMovies (request, response) {
 }
 
 function Movie (see) {
+  this.tableName = 'movies';
   this.title = see.title;
   this.overview = see.overview;
   this.average_votes = see.vote_average;
@@ -339,6 +342,7 @@ function getMeetup (request, response) {
 }
 
 function Meetup (result) {
+  this.tableName = 'meetups';
   this.link = result.link;
   this.name = result.name;
   this.creation_date = new Date(result.created * 1000).toString().slice(0, 15);
@@ -409,6 +413,7 @@ function getTrails (request, response) {
 }
 
 function Trails (result) {
+  this.tableName = 'trails';
   this.name = result.name;
   this.location = result.location;
   this.stars = result.stars;
