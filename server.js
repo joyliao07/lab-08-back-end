@@ -68,20 +68,22 @@ function getLocation (request, response){
 function getWeather (request, response) {
   Weather.lookup({
     tableName: Weather.tableName,
+    locationID: request.query.data.id,
 
-    cacheHit: function(results){
-      let ageOfResultsInMinutes = (Date.now()-results.rows[0].created_at)/(1000*60);
+    cacheHit: function(rowsArray){
+      let ageOfResultsInMinutes = (Date.now()-rowsArray[0].created_at)/(1000*60);
+      console.log('getWeather catchHit');
       if(ageOfResultsInMinutes > 30) {
         Weather.deleteByLocationId(Weather.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(results.rows);
+        response.send(rowsArray);
       }
     },
 
     cacheMiss: function () {
       const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
-
+      console.log('getWeather catchMiss');
       superagent.get(url)
         .then(result => {
           const weatherSummaries = result.body.daily.data.map(day => {
@@ -114,14 +116,15 @@ Weather.prototype = {
 function getYelp (request, response) {
   Business.lookup({
     tableName: Business.tableName,
+    locationID: request.query.data.id,
 
-    cacheHit: function(results){
-      let ageOfResultsInHours = (Date.now()-results.rows[0].created_at)/(1000*60*60);
+    cacheHit: function(rowsArray){
+      let ageOfResultsInHours = (Date.now()-rowsArray[0].created_at)/(1000*60*60);
       if(ageOfResultsInHours > 24) {
         Business.deleteByLocationId(Business.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(results.rows);
+        response.send(rowsArray);
       }
     },
 
@@ -165,14 +168,15 @@ Business.prototype = {
 function getMovies (request, response) {
   Movie.lookup({
     tableName: Movie.tableName,
+    locationID: request.query.data.id,
 
-    cacheHit: function(results){
-      let ageOfResultsInDays = (Date.now()-results.rows[0].created_at)/(1000*60*60*24);
+    cacheHit: function(rowsArray){
+      let ageOfResultsInDays = (Date.now()-rowsArray[0].created_at)/(1000*60*60*24);
       if(ageOfResultsInDays > 3) {
         Movie.deleteByLocationId(Movie.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(results.rows);
+        response.send(rowsArray);
       }
     },
 
@@ -216,14 +220,15 @@ Movie.prototype = {
 function getMeetup (request, response) {
   Meetup.lookup({
     tableName: Meetup.tableName,
+    locationID: request.query.data.id,
 
-    cacheHit: function(results){
-      let ageOfResultsInHours = (Date.now()-results.rows[0].created_at)/(1000*60*60);
+    cacheHit: function(rowsArray){
+      let ageOfResultsInHours = (Date.now()-rowsArray[0].created_at)/(1000*60*60);
       if(ageOfResultsInHours > 24) {
         Meetup.deleteByLocationId(Meetup.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(results.rows);
+        response.send(rowsArray);
       }
     },
 
@@ -264,19 +269,22 @@ Meetup.prototype = {
 function getTrails (request, response) {
   Trails.lookup({
     tableName: Trails.tableName,
+    locationID: request.query.data.id,
 
-    cacheHit: function(results){
-      let ageOfResultsInDays = (Date.now()-results.rows[0].created_at)/(1000*60*60*24);
+    cacheHit: function(rowsArray){
+      let ageOfResultsInDays = (Date.now()-rowsArray[0].created_at)/(1000*60*60*24);
+      console.log('get Trails catcheHit');
       if(ageOfResultsInDays > 7) {
         Trails.deleteByLocationId(Trails.tableName, request.query.data.id);
         this.cacheMiss();
       } else {
-        response.send(results.rows);
+        response.send(rowsArray);
       }
     },
 
     cacheMiss: function () {
       const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
+      console.log('get Trails catcheMiss');
 
       superagent.get(url)
         .then(result => {
@@ -336,12 +344,12 @@ function Location(query, res) {
 
 function lookup (options) {
   const SQL = `SELECT * FROM ${options.tableName} WHERE location_id=$1;`;
-  const values = [options.location];
+  const values = [options.locationID];
 
   client.query(SQL, values)
     .then(result => {
       if(result.rowCount > 0) {
-        options.cacheHit(result.rows);
+        options.cacheHit(result.rows); //an array of object
       } else {
         options.cacheMiss();
       }
@@ -355,7 +363,7 @@ Location.prototype = {
     const values = [this.search_query, this.formatted_query, this.latitude, this.longitude, this.created_at];
     return client.query(SQL, values)
       .then(result => {
-        this.id = result.rows[0].id;
+        this.id = result.rows[0].id; 
         return this;
       })
       .catch(error => handleError(error));
